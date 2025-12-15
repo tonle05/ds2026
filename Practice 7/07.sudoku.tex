@@ -1,0 +1,163 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{hyperref}
+
+% Code highlighting configuration
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+\title{Practical Work 7: Sudoku on Google App Engine}
+\author{Group Name \\ Member 1 \\ Member 2}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+Google App Engine (GAE) is a Platform as a Service (PaaS) offering that allows developers to build and run applications on Google's infrastructure. This practical work demonstrates how to build a simple Sudoku web application using Python (Flask) and prepare it for deployment on GAE.
+
+\section{Project Structure}
+The project follows the standard structure required by the GAE Python runtime environment:
+
+\begin{itemize}
+    \item \texttt{app.yaml}: The configuration file that defines the runtime environment and handlers.
+    \item \texttt{main.py}: The core application logic utilizing the Flask micro-framework.
+    \item \texttt{requirements.txt}: Lists dependencies (Flask, Gunicorn) to be installed by GAE.
+    \item \texttt{templates/index.html}: The frontend HTML template for rendering the Sudoku board.
+\end{itemize}
+
+\section{Implementation Details}
+
+\subsection{Configuration (app.yaml)}
+This snippet defines the Python 3.9 runtime and the entry point for the application using Gunicorn.
+
+\begin{lstlisting}[language=bash]
+runtime: python39
+entrypoint: gunicorn -b :$PORT main:app
+
+handlers:
+  - url: /.*
+    script: auto
+\end{lstlisting}
+
+\subsection{Application Logic (main.py)}
+We use a list of lists to represent the Sudoku board. The \texttt{index} function handles both GET requests (displaying the board) and POST requests (validating the user's solution).
+
+\begin{lstlisting}[language=python]
+from flask import Flask, render_template, request
+app = Flask(__name__)
+
+# Simplified Board Logic
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    board = PUZZLE_BOARD
+    message = ""
+    if request.method == 'POST':
+        # Logic to validate user input against SOLVED_BOARD
+        # Sets message to "Congratulations" or "Incorrect"
+        pass 
+    return render_template('index.html', board=board, message=message)
+\end{lstlisting}
+
+\subsection{Frontend Interface (templates/index.html)}
+The HTML template utilizes Jinja2 templating engine to render the 9x9 grid dynamically. It uses nested loops to create input fields for each cell and submits the user's data via a POST form.
+
+\begin{lstlisting}[language=html]
+<!DOCTYPE html>
+<html>
+<body>
+    <h1>Sudoku on Google App Engine</h1>
+    <form method="POST">
+        <table>
+            {% for r in range(9) %}
+            <tr>
+                {% for c in range(9) %}
+                <td>
+                    <input type="text" name="cell-{{r}}-{{c}}" 
+                           value="{{ board[r][c] if board[r][c] != 0 else '' }}" 
+                           maxlength="1">
+                </td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </table>
+        <button type="submit" class="btn">Check Solution</button>
+    </form>
+    <div class="msg">{{ message }}</div>
+</body>
+</html>
+\end{lstlisting}
+
+\section{Setup and Execution}
+
+Since modern Linux distributions adopt \texttt{PEP 668}, we cannot install Python packages system-wide. Therefore, we set up a virtual environment to run the application locally.
+
+\subsection{Environment Setup}
+We executed the following commands to prepare the environment and install dependencies:
+
+\begin{lstlisting}[language=bash]
+# 1. Create a virtual environment
+sudo apt install python3-venv -y
+python3 -m venv venv
+
+# 2. Activate the environment
+source venv/bin/activate
+
+# 3. Install required libraries
+pip install flask gunicorn
+\end{lstlisting}
+
+\subsection{Running the Application}
+After the setup, we started the Flask development server:
+
+\begin{lstlisting}[language=bash]
+# Run the application
+python3 main.py
+\end{lstlisting}
+
+The terminal output confirmed that the server was running on \texttt{http://127.0.0.1:8080}.
+
+\subsection{Results}
+We verified the gameplay by accessing the local web server. Figure \ref{fig:sudoku} displays the Sudoku game interface where users can input numbers and check their solutions.
+
+\begin{figure}[H]
+    \centering
+    % Đổi tên file ảnh chụp màn hình của bạn thành sudoku_result.png
+    \includegraphics[width=0.85\linewidth]{image1.png}
+    \caption{Sudoku Game Interface running on Local Development Server}
+    \label{fig:sudoku}
+\end{figure}
+
+\section{Conclusion}
+In this practical work, we successfully structured a Python web application for the Google App Engine platform. By using Flask, we separated the logic (Python) from the presentation (HTML templates). 
+\begin{itemize}
+    \item The \texttt{app.yaml} file is crucial for GAE to understand how to serve the application.
+    \item The PaaS model allows us to focus on the code (\texttt{main.py}) without worrying about the underlying infrastructure setup.
+\end{itemize}
+
+\end{document}
