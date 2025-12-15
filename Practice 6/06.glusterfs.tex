@@ -1,0 +1,121 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{hyperref}
+
+% Config
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showtabs=false,                  
+    tabsize=2,
+    frame=single
+}
+\lstset{style=mystyle}
+
+\title{Practical Work 6: GlusterFS}
+\author{Le Quy Ton \\ 23BI14425}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section{Introduction}
+GlusterFS is a scalable network-attached storage file system. This practical work aims to install GlusterFS, configure a distributed replicated volume, and evaluate its performance through benchmarking using Python automation.
+
+\section{Setup and Configuration}
+
+\subsection{Installation}
+We installed GlusterFS server on our Debian environment using the following commands:
+\begin{lstlisting}[language=bash]
+sudo apt-get update
+sudo apt-get install -y glusterfs-server
+sudo systemctl start glusterd
+sudo systemctl enable glusterd
+\end{lstlisting}
+
+\subsection{Trusted Pool and Volume Creation}
+We used a Python automation script to detect the machine's real IP address (as GlusterFS prohibits `localhost` for volume creation) and configured a \textbf{Distributed Replicated Volume} (Replica count = 2).
+
+\textbf{1. Prepare Bricks:}
+\begin{lstlisting}[language=bash]
+mkdir -p /data/brick1/gv0
+mkdir -p /data/brick2/gv0
+\end{lstlisting}
+
+\textbf{2. Create Volume:}
+\begin{lstlisting}[language=bash]
+# Using the machine's Real IP (detected automatically)
+sudo gluster volume create gv0 replica 2 \
+    <Host_IP>:/data/brick1/gv0 \
+    <Host_IP>:/data/brick2/gv0 force
+\end{lstlisting}
+
+\textbf{3. Start and Mount Volume:}
+\begin{lstlisting}[language=bash]
+sudo gluster volume start gv0
+mkdir -p /mnt/gluster_client
+# Mounting using the Real IP
+sudo mount -t glusterfs <Host_IP>:/gv0 /mnt/gluster_client
+\end{lstlisting}
+
+\section{Benchmarking}
+We utilized a Python script to automate the benchmarking process. The tests focused on two scenarios required by the specifications.
+
+\subsection{Methodology}
+\begin{itemize}
+    \item \textbf{Large Files:} We generated a 512MB file filled with zeros. We cleared the RAM cache (\texttt{drop\_caches}) before reading to ensure we measured disk I/O, not RAM speed. The metric is Read Speed (MB/s).
+    \item \textbf{Small Files:} We created 500 small empty files sequentially in the GlusterFS mount point. The metric is Number of Accesses (Creations) per second.
+\end{itemize}
+
+\subsection{Results}
+The benchmarks were performed on a single-node setup (simulating 2 bricks). The results obtained from the automation script are shown below.
+
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|}
+        \hline
+        \textbf{Configuration} & \textbf{Small Files (ops/s)} & \textbf{Large Files Read (MB/s)} \\
+        \hline
+        1 Server (2 Bricks) & 190.28 & 215.17 \\ 
+        \hline
+        \textit{Hypothetical 2 Servers} & \textit{Estimated ~160} & \textit{Estimated ~400} \\
+        \hline
+    \end{tabular}
+    \caption{Performance Benchmarks}
+    \label{tab:benchmark}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{image1.png}
+    \caption{Successful execution and benchmark results}
+    \label{fig:execution}
+\end{figure}
+
+\section{Conclusion}
+We successfully set up a GlusterFS environment with a distributed replicated volume using an automated Python script to handle IP detection and configuration.
+\begin{itemize}
+    \item \textbf{Replication} ensures data availability; if one brick fails, data is still accessible.
+    \item \textbf{Performance}: We achieved a read speed of \textbf{215.17 MB/s} for large files and a creation rate of \textbf{190.28 ops/s} for small files. The overhead for small files is expected due to metadata synchronization in a distributed file system.
+\end{itemize}
+
+\end{document}
