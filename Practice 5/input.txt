@@ -1,0 +1,5 @@
+/usr/bin
+/usr/local/bin/python3
+/home/user/documents/report.pdf
+/var/log/syslog
+/tmp/short
